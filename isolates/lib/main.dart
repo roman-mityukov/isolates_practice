@@ -1,7 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:worker_manager/worker_manager.dart';
 
-void main() {
+void main() async {
+  // Executor создает n изолятов, где n - количество ядер процессора.
+  // Внутри содержит очередь задач, у которых может быть приоритет. Метод
+  // execute возвращает Cancelable. Если отменяется задача, которая еще не
+  // исполняется каким-то изолятом, то она просто убирается из очереди. Если
+  // выполняется изолятом, то изолят убивается и создается заново.
+  await Executor().warmUp();
   runApp(MyApp());
 }
 
@@ -35,44 +42,33 @@ class MyHomePage extends StatelessWidget {
           color: Colors.white,
           child: Text('Start in event queue'),
           onPressed: () async {
-            print(fibonacchi(number));
+            final result = fibonacchi(number);
+            print(result);
           },
         ),
         FlatButton(
           color: Colors.white,
           child: Text('Start in compute'),
           onPressed: () async {
-            final result = await compute(computeFibonacchi, number);
+            final result = await compute(fibonacchi, number);
             print(result);
           },
         ),
         FlatButton(
           color: Colors.white,
-          child: Text('Start in isolate'),
+          child: Text('Start in executor'),
           onPressed: () async {
-            final result = await compute(computeFibonacchi, number);
+            final result = await Executor().execute(arg1: 40, fun1: fibonacchi);
             print(result);
           },
-        ),
-        FlatButton(
-          color: Colors.white,
-          child: Text('Kill isolate'),
-          onPressed: () {},
         )
       ],
     );
   }
 }
 
-int kill() {}
-
-int computeFibonacchi(int value) {
-  return fibonacchi(value);
-}
-
 int fibonacchi(int n) {
   if (n == 0) return 0;
-
   if (n == 1) return 1;
   return fibonacchi(n - 2) + fibonacchi(n - 1);
 }
