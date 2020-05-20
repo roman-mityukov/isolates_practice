@@ -15,10 +15,7 @@ void main() async {
   runApp(
     MaterialApp(
       title: 'Flutter Demo',
-      home: Padding(
-        padding: EdgeInsets.all(32),
-        child: MyHomePage(),
-      ),
+      home: MyHomePage(),
     ),
   );
 }
@@ -33,65 +30,90 @@ class MyHomePage extends StatefulWidget {
 class _StateMyHomePage extends State<MyHomePage> {
   final int number = 40;
   WorkerIsolate _workerIsolate;
+  GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        Expanded(
-          child: Center(
-            child: CircularProgressIndicator(),
+    return Scaffold(
+      key: _scaffoldKey,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Expanded(
+            child: Center(
+              child: CircularProgressIndicator(),
+            ),
           ),
-        ),
-        FlatButton(
-          color: Colors.white,
-          child: Text('Start in event queue'),
-          onPressed: () async {
-            final result = fibonacchi(number);
-            print(result);
-          },
-        ),
-        FlatButton(
-          color: Colors.white,
-          child: Text('Start in compute'),
-          onPressed: () async {
-            final result = await compute(fibonacchi, number);
-            print(result);
-          },
-        ),
-        FlatButton(
-          color: Colors.white,
-          child: Text('Start in executor'),
-          onPressed: () async {
-            final result = await WorkerManager.Executor()
-                .execute(arg1: 40, fun1: fibonacchi);
-            print(result);
-          },
-        ),
-        FlatButton(
-          color: Colors.white,
-          child: Text('Start in isolate'),
-          onPressed: () async {
-            if (_workerIsolate == null) {
-              _workerIsolate = WorkerIsolate();
-              await _workerIsolate.init();
-            }
+          FlatButton(
+            color: Colors.white,
+            child: Text('Start in event queue'),
+            onPressed: () async {
+              final result = fibonacchi(number);
+              _showResult(result);
+            },
+          ),
+          FlatButton(
+            color: Colors.white,
+            child: Text('Start in compute'),
+            onPressed: () async {
+              final result = await compute(fibonacchi, number);
+              _showResult(result);
+            },
+          ),
+          FlatButton(
+            color: Colors.white,
+            child: Text('Start in executor'),
+            onPressed: () async {
+              final result = await WorkerManager.Executor()
+                  .execute(arg1: 40, fun1: fibonacchi);
+              _showResult(result);
+            },
+          ),
+          FlatButton(
+            color: Colors.white,
+            child: Text('Start in isolate'),
+            onPressed: () async {
+              try {
+                if (_workerIsolate == null) {
+                  _workerIsolate = WorkerIsolate();
+                  await _workerIsolate.init();
+                }
 
-            final result = await _workerIsolate.execute(Task(fibonacchi, 40));
-            print(result);
-            _workerIsolate?.kill();
-          },
-        ),
-        FlatButton(
-          color: Colors.white,
-          child: Text('Kill isolate'),
-          onPressed: () async {
-            _workerIsolate?.kill();
-            _workerIsolate = null;
-          },
-        )
-      ],
+                final result =
+                    await _workerIsolate.execute(Task(fibonacchi, 40));
+                _showResult(result);
+                _workerIsolate?.kill();
+              } on IllegalStateException catch (_) {
+                _scaffoldKey.currentState?.showSnackBar(
+                  SnackBar(
+                    content: Text(
+                      'IllegalStateException',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+          ),
+          FlatButton(
+            color: Colors.white,
+            child: Text('Kill isolate'),
+            onPressed: () async {
+              _workerIsolate?.kill();
+              _workerIsolate = null;
+            },
+          )
+        ],
+      ),
+    );
+  }
+
+  void _showResult(Object result) {
+    _scaffoldKey.currentState?.showSnackBar(
+      SnackBar(
+        content: Text(result?.toString() ?? 'null'),
+      ),
     );
   }
 }
