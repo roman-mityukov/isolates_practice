@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:worker_manager/worker_manager.dart';
+import 'package:isolates/worker_isolate.dart';
+import 'package:worker_manager/worker_manager.dart' as WorkerManager;
 
 void main() async {
   // Executor создает n изолятов, где n - количество ядер процессора. Это может
@@ -10,25 +11,28 @@ void main() async {
   // execute возвращает Cancelable. Если отменяется задача, которая еще не
   // исполняется каким-то изолятом, то она просто убирается из очереди. Если
   // выполняется изолятом, то изолят убивается и создается заново.
-  await Executor().warmUp();
-  runApp(MyApp());
-}
-
-class MyApp extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
+  await WorkerManager.Executor().warmUp();
+  runApp(
+    MaterialApp(
       title: 'Flutter Demo',
       home: Padding(
         padding: EdgeInsets.all(32),
         child: MyHomePage(),
       ),
-    );
+    ),
+  );
+}
+
+class MyHomePage extends StatefulWidget {
+  @override
+  State<StatefulWidget> createState() {
+    return _StateMyHomePage();
   }
 }
 
-class MyHomePage extends StatelessWidget {
+class _StateMyHomePage extends State<MyHomePage> {
   final int number = 40;
+  WorkerIsolate _workerIsolate;
 
   @override
   Widget build(BuildContext context) {
@@ -60,8 +64,31 @@ class MyHomePage extends StatelessWidget {
           color: Colors.white,
           child: Text('Start in executor'),
           onPressed: () async {
-            final result = await Executor().execute(arg1: 40, fun1: fibonacchi);
+            final result = await WorkerManager.Executor()
+                .execute(arg1: 40, fun1: fibonacchi);
             print(result);
+          },
+        ),
+        FlatButton(
+          color: Colors.white,
+          child: Text('Start in isolate'),
+          onPressed: () async {
+            if (_workerIsolate == null) {
+              _workerIsolate = WorkerIsolate();
+              await _workerIsolate.init();
+            }
+
+            final result = await _workerIsolate.execute(Task(fibonacchi, 40));
+            print(result);
+            _workerIsolate?.kill();
+          },
+        ),
+        FlatButton(
+          color: Colors.white,
+          child: Text('Kill isolate'),
+          onPressed: () async {
+            _workerIsolate?.kill();
+            _workerIsolate = null;
           },
         )
       ],
