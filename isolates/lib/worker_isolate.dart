@@ -4,7 +4,7 @@ import 'dart:isolate';
 import 'package:async/async.dart';
 
 abstract class WorkerIsolate {
-  factory WorkerIsolate() => _WorkerIsolate();
+  factory WorkerIsolate.create() => _WorkerIsolate();
 
   Future<void> init();
 
@@ -16,19 +16,19 @@ abstract class WorkerIsolate {
 class _WorkerIsolate implements WorkerIsolate {
   // Изолят-потомок, который будет создан при инициализации объекта
   // _WorkerIsolate и который будет использоваться для выполнения работы
-  Isolate _isolate;
+   Isolate? _isolate;
 
   // Порт, который будет использоваться для отправки сообщений изоляту-потомку
-  SendPort _childSendPort;
+   SendPort? _childSendPort;
 
   // Подписка на ReceivePort(такие порты реализуют Stream) изолята-родителя. В
   // этот порт будут приходить сообщения из изолята-потомка
-  StreamSubscription<Object> _isolateSubscription;
+   StreamSubscription<dynamic>? _isolateSubscription;
 
-  Completer<Object> _result;
+    Completer<Object>? _result;
 
   Future<void> init() async {
-    if (_result != null && !_result.isCompleted) {
+    if (_result != null && !_result!.isCompleted) {
       throw IllegalStateException();
     }
 
@@ -41,9 +41,9 @@ class _WorkerIsolate implements WorkerIsolate {
           _childSendPort = message;
           initCompleter.complete();
         } else if (message is ValueResult) {
-          _result.complete(message.value);
+          _result!.complete(message.value);
         } else if (message is ErrorResult) {
-          _result.completeError(message.error);
+          _result!.completeError(message.error);
         } else {
           throw IllegalStateException();
         }
@@ -58,13 +58,13 @@ class _WorkerIsolate implements WorkerIsolate {
       throw IllegalStateException();
     }
 
-    if (_result != null && !_result.isCompleted) {
+    if (_result != null && !_result!.isCompleted) {
       throw IllegalStateException();
     }
 
     _result = Completer();
-    _childSendPort.send(task);
-    return _result.future;
+    _childSendPort?.send(task);
+    return _result!.future;
   }
 
   void kill() {
