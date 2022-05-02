@@ -82,7 +82,7 @@ class _StateMyHomePage extends State<MyHomePage> {
                   _showResult(result);
                   _workerIsolate?.kill();
                 } on IllegalStateException catch (_) {
-                  _scaffoldKey.currentState?.showSnackBar(
+                  ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
                         'IllegalStateException',
@@ -108,7 +108,7 @@ class _StateMyHomePage extends State<MyHomePage> {
   }
 
   void _showResult(Object result) {
-    _scaffoldKey.currentState?.showSnackBar(
+    ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(result?.toString() ?? 'null'),
       ),
