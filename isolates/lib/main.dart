@@ -131,6 +131,11 @@ class _StateMyHomePage extends State<MyHomePage> {
   }
 }
 
+// Если dart 2.15 и выше, то передача результата из одного изолята в другой
+// происходит через shared memory и UI не тормозит из-за сериализации объекта.
+// Но тут нужно еще смотреть на объем данных и вызовы GC - UI может тормозить
+// из-за уборки больших объемов GC не в UI изоляте https://github.com/dart-lang/sdk/issues/46754.
+// Размеры памяти https://groups.google.com/a/dartlang.org/g/announce/c/1xlv22W7fRI
 dynamic decodeJson(String path) async {
   final file = File('$path/data.json');
   final string = file.readAsStringSync();
