@@ -15,7 +15,7 @@ void main() async {
 
   final string = await rootBundle.loadString('assets/data.json');
   path = (await getApplicationDocumentsDirectory()).path;
-  final file = File('${path}/data.json');
+  final file = File('$path/data.json');
   file.writeAsStringSync(string);
 
   // Executor создает n изолятов, где n - количество ядер процессора. Это может
@@ -42,9 +42,7 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _StateMyHomePage extends State<MyHomePage> {
-  final int number = 40;
   WorkerIsolate? _workerIsolate;
-  Object result = {};
 
   @override
   Widget build(BuildContext context) {
@@ -65,23 +63,23 @@ class _StateMyHomePage extends State<MyHomePage> {
               ElevatedButton(
                 child: Text('Start in main isolate event queue'),
                 onPressed: () async {
-                  final result = fibonacchi(number);
-                  _showResult(result);
+                  final result = decodeJson(path);
+                  _showComplete();
                 },
               ),
               ElevatedButton(
                 child: Text('Start in compute'),
                 onPressed: () async {
                   final result = await compute(decodeJson, path);
-                  _showResult(1);
+                  _showComplete();
                 },
               ),
               ElevatedButton(
                 child: Text('Start in worker_manager'),
                 onPressed: () async {
                   final result = await WorkerManager.Executor()
-                      .execute(arg1: 40, fun1: fibonacchi);
-                  _showResult(result);
+                      .execute(arg1: path, fun1: decodeJson);
+                  _showComplete();
                 },
               ),
               ElevatedButton(
@@ -94,35 +92,9 @@ class _StateMyHomePage extends State<MyHomePage> {
                     }
 
                     final result =
-                        await _workerIsolate!.execute(Task(fibonacchi, 40));
-                    _showResult(result);
-                    _workerIsolate?.kill();
-                  } on IllegalStateException catch (_) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(
-                          'IllegalStateException',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                },
-              ),
-              ElevatedButton(
-                child: Text('Start json decoding in isolate'),
-                onPressed: () async {
-                  try {
-                    if (_workerIsolate == null) {
-                      _workerIsolate = WorkerIsolate.create();
-                      await _workerIsolate!.init();
-                    }
-
-                    result =
                         await _workerIsolate!.execute(Task(decodeJson, path));
+                    _showComplete();
                     _workerIsolate?.kill();
-                    _showResult(1);
                   } on IllegalStateException catch (_) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -150,23 +122,17 @@ class _StateMyHomePage extends State<MyHomePage> {
     );
   }
 
-  void _showResult(Object result) {
+  void _showComplete() {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(result.toString() ?? 'null'),
+        content: Text('Complete'),
       ),
     );
   }
 }
 
-int fibonacchi(int n) {
-  if (n == 0) return 0;
-  if (n == 1) return 1;
-  return fibonacchi(n - 2) + fibonacchi(n - 1);
-}
-
 dynamic decodeJson(String path) async {
-  final file = File('${path}/data.json');
+  final file = File('$path/data.json');
   final string = file.readAsStringSync();
   final json = jsonDecode(string);
 
