@@ -10,6 +10,13 @@ import 'package:worker_manager/worker_manager.dart' as WorkerManager;
 
 late String path;
 
+// Что нужно учесть при использовании изолятов для фоновой работы в приложении
+// - Изоляты не поддерживаются на вебе
+// - Зависимости нельзя передавать в другой изолят (сложные объекты нельзя передать через SendPort https://api.dart.dev/stable/2.19.6/dart-isolate/SendPort/send.html), каждый изолят должен внутри себя создать зависимости (ведет к перерасходу памяти из-за дублирующихся объектов). Например нельзя передать в другой изолят http-клиент, он должен быть создан и настроен в каждом изоляте
+// - Sqflite не работает в дочерних изолятах https://github.com/tekartik/sqflite/blob/master/sqflite/doc/usage_recommendations.md#isolates
+// - В изоляты лучше перемещать задачи, которые не требуют много контекста и зависимостей. В нашем случае это 
+// 	+ маппинги строк http ответов в объекты. Можно просто использовать dio.transformer, в котором можно парсить json в отдельном изоляте
+//	+ ???
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
